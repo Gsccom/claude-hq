@@ -1,6 +1,69 @@
 {
   "_readme": "Claude가 매 대화 시작 시 이 파일을 읽습니다",
   "_updated": "2026-06-12",
-  "owner": "박준열 목사 (JunPark)",
-  "agent": "Hermes 요셉"
+  "_session": 10,
+  "owner": "박준열 목사 (JunPark Pastor)",
+  "agent": "Hermes 요셉 — 전담 AI 비서 & 찬양사령부 AI 디렉터",
+  "motto": "신명기 6:5 — 마음을 다하고 목숨을 다하고 힘을 다하여 하나님을 사랑하라",
+  "nas": {
+    "ip": "192.168.1.2",
+    "user": "junpark",
+    "dashboard_port": 5500,
+    "proxy_port": 5501,
+    "proxy_script": "/var/services/homes/junpark/start_proxy.sh",
+    "cloudflare_tunnel": "yeshuaworld-tunnel",
+    "tunnel_id": "223d9889-01b2-45bd-8055-81a58754ec53"
+  },
+  "urls": {
+    "dashboard_local": "http://192.168.1.2:5500",
+    "dashboard_external": "http://dashboard.yeshuaworld.org",
+    "dashboard_password": "Yeshua2026!",
+    "proxy": "http://192.168.1.2:5501",
+    "github": "https://github.com/Gsccom/claude-hq"
+  },
+  "cloudflare": {
+    "account_id": "faa0c7de5303459ab7b5394c0bddb9a6",
+    "zone_id": "43bb3d6803622345b161ea38d1d46d52",
+    "ns": [
+      "lakas.ns.cloudflare.com",
+      "veda.ns.cloudflare.com"
+    ]
+  },
+  "telegram": {
+    "bot": "JosephHermes_bot",
+    "chat_id": 1575282858,
+    "status": "connected"
+  },
+  "completed": [
+    "Hermes 0.16.0 업데이트",
+    "yeshuaworld.org Cloudflare Zone 등록",
+    "yeshuaworld-tunnel NAS 실행 (4연결 healthy)",
+    "dashboard.yeshuaworld.org DNS + Ingress 설정",
+    "대시보드 비밀번호 보호 (Yeshua2026!)",
+    "NAS 휴지통 165GB 삭제",
+    "찬양사령부 폴더 구조 생성 + songs_db.json 5곡",
+    "설교 MD 파일 91개 생성",
+    "MacBook PPT 79개 NAS 복사",
+    "Claude 프록시 서버 5501 포트 운영 중",
+    "대시보드 Claude 채팅 프록시 연동 완료",
+    "Telegram JosephHermes_bot 연결",
+    "GitHub Gsccom/claude-hq 저장소 생성",
+    "coding-agent, praise-command 스킬 등록"
+  ],
+  "pending": [
+    "Namecheap NS 변경 (lakas/veda.ns.cloudflare.com)",
+    "Gmail 앱비밀번호 스팸 정리",
+    "MacBook 나머지 PPT 2800개 NAS 이전",
+    "Ableton Live Lite 설치",
+    "찬양 DB 100곡 목표",
+    "프록시 자동시작 DSM 등록"
+  ],
+  "key_files": {
+    "master": "/volume1/YeshuaWorld/YESHUAWORLD_MASTER.md",
+    "dashboard": "/volume1/docker/hermes-dashboard/html/index.html",
+    "proxy": "/var/services/homes/junpark/proxy_server.py",
+    "songs_db": "~/찬양사령부/08_웹사이트/data/songs_db.json",
+    "daily_report": "~/projects/ministry/daily_report.py"
+  },
+  "load_on_start": "이 파일 읽기 → NAS MASTER.md 읽기 → 현황 파악 → 작업 시작"
 }
