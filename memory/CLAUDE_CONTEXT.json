@@ -1,69 +1,213 @@
 {
-  "_readme": "Claude가 매 대화 시작 시 이 파일을 읽습니다",
-  "_updated": "2026-06-12",
-  "_session": 10,
-  "owner": "박준열 목사 (JunPark Pastor)",
-  "agent": "Hermes 요셉 — 전담 AI 비서 & 찬양사령부 AI 디렉터",
-  "motto": "신명기 6:5 — 마음을 다하고 목숨을 다하고 힘을 다하여 하나님을 사랑하라",
-  "nas": {
-    "ip": "192.168.1.2",
-    "user": "junpark",
-    "dashboard_port": 5500,
-    "proxy_port": 5501,
-    "proxy_script": "/var/services/homes/junpark/start_proxy.sh",
-    "cloudflare_tunnel": "yeshuaworld-tunnel",
-    "tunnel_id": "223d9889-01b2-45bd-8055-81a58754ec53"
-  },
-  "urls": {
-    "dashboard_local": "http://192.168.1.2:5500",
-    "dashboard_external": "http://dashboard.yeshuaworld.org",
-    "dashboard_password": "Yeshua2026!",
-    "proxy": "http://192.168.1.2:5501",
-    "github": "https://github.com/Gsccom/claude-hq"
-  },
-  "cloudflare": {
-    "account_id": "faa0c7de5303459ab7b5394c0bddb9a6",
-    "zone_id": "43bb3d6803622345b161ea38d1d46d52",
-    "ns": [
-      "lakas.ns.cloudflare.com",
-      "veda.ns.cloudflare.com"
+  "_readme": "Claude가 매 대화 시작 시 이 파일을 읽습니다. 절대 삭제하지 마세요.",
+  "_raw_url": "https://raw.githubusercontent.com/gscnycom/claude-hq/main/memory/CLAUDE_CONTEXT.json",
+  "_updated": "2026-06-15",
+  "_session": 9,
+  "claude_instruction": {
+    "on_start": "이 파일을 읽었으면 '기억 복원 완료 ✓ — 세션 N, 프로젝트 3개 파악' 라고 먼저 말하고 작업을 시작하세요",
+    "on_finish": "작업 완료 후 반드시 이 JSON의 해당 프로젝트 status/next/history를 업데이트한 새 버전을 출력하세요",
+    "never_do": [
+      "비슷한 파일 중복 생성",
+      "file_registry에 없는 새 HTML 파일 무단 생성",
+      "이전 작업 내용 모르는 척하고 처음부터 다시 설계"
     ]
   },
-  "telegram": {
-    "bot": "JosephHermes_bot",
-    "chat_id": 1575282858,
-    "status": "connected"
+  "agents": {
+    "hermes": {
+      "where": "Synology NAS 터미널",
+      "role": "파일실행·배포·Docker·cron·폴더관리",
+      "status": "online"
+    },
+    "sisyphus": {
+      "where": "OhMyOpenCode",
+      "role": "코드생성·리팩토링·테스트",
+      "status": "standby"
+    },
+    "openclue": {
+      "where": "OpenClue",
+      "role": "검색·분석·문서화",
+      "status": "offline"
+    },
+    "claude": {
+      "where": "claude.ai",
+      "role": "설계·지시·코드작성·총괄",
+      "status": "online"
+    }
   },
-  "completed": [
-    "Hermes 0.16.0 업데이트",
-    "yeshuaworld.org Cloudflare Zone 등록",
-    "yeshuaworld-tunnel NAS 실행 (4연결 healthy)",
-    "dashboard.yeshuaworld.org DNS + Ingress 설정",
-    "대시보드 비밀번호 보호 (Yeshua2026!)",
-    "NAS 휴지통 165GB 삭제",
-    "찬양사령부 폴더 구조 생성 + songs_db.json 5곡",
-    "설교 MD 파일 91개 생성",
-    "MacBook PPT 79개 NAS 복사",
-    "Claude 프록시 서버 5501 포트 운영 중",
-    "대시보드 Claude 채팅 프록시 연동 완료",
-    "Telegram JosephHermes_bot 연결",
-    "GitHub Gsccom/claude-hq 저장소 생성",
-    "coding-agent, praise-command 스킬 등록"
-  ],
-  "pending": [
-    "Namecheap NS 변경 (lakas/veda.ns.cloudflare.com)",
-    "Gmail 앱비밀번호 스팸 정리",
-    "MacBook 나머지 PPT 2800개 NAS 이전",
-    "Ableton Live Lite 설치",
-    "찬양 DB 100곡 목표",
-    "프록시 자동시작 DSM 등록"
-  ],
-  "key_files": {
-    "master": "/volume1/YeshuaWorld/YESHUAWORLD_MASTER.md",
-    "dashboard": "/volume1/docker/hermes-dashboard/html/index.html",
-    "proxy": "/var/services/homes/junpark/proxy_server.py",
-    "songs_db": "~/찬양사령부/08_웹사이트/data/songs_db.json",
-    "daily_report": "~/projects/ministry/daily_report.py"
+  "nas": {
+    "base": "/volume1/",
+    "structure": {
+      "/volume1/claude/": "Claude 작업 전용 루트",
+      "/volume1/claude/dashboard/": "헤르메스 HQ (index.html 1개)",
+      "/volume1/claude/sermon-system/": "설교사령부 패키지",
+      "/volume1/claude/MASTER_CONTEXT.md": "NAS 기억 파일",
+      "/volume1/claude/UPDATE_CONTEXT.sh": "기억 업데이트 스크립트",
+      "/volume1/sermons/": "설교사령부 데이터",
+      "/volume1/sermons/ppt/": "원본 PPT 3000+개",
+      "/volume1/sermons/html/": "설교 포털 (index.html 1개)",
+      "/volume1/sermons/audio/": "설교 오디오",
+      "/volume1/praise/": "찬양사령부",
+      "/volume1/praise/index.html": "찬양 포털 (1개)"
+    }
   },
-  "load_on_start": "이 파일 읽기 → NAS MASTER.md 읽기 → 현황 파악 → 작업 시작"
+  "file_registry": {
+    "_rule": "새 파일 만들기 전 반드시 이 목록 확인. 1프로젝트 = 1 index.html 원칙",
+    "files": {
+      "hermes-hq/index.html": {
+        "nas": "/volume1/claude/dashboard/index.html",
+        "github": "projects/hermes-hq/index.html",
+        "status": "complete",
+        "note": "통합대시보드 채팅+스킬+모니터+미션컨트롤"
+      },
+      "sermon-system/sql/01_schema.sql": {
+        "nas": "/volume1/claude/sermon-system/sql/",
+        "github": "projects/sermon-system/sql/01_schema.sql",
+        "status": "complete",
+        "note": "Supabase 전체 스키마"
+      },
+      "sermon-system/pipeline/pipeline.py": {
+        "nas": "/volume1/claude/sermon-system/pipeline/",
+        "github": "projects/sermon-system/pipeline/pipeline.py",
+        "status": "complete",
+        "note": "PPT 자동 처리"
+      },
+      "sermon-system/edge-functions/embed": {
+        "nas": "Supabase Edge Function",
+        "github": "projects/sermon-system/edge-functions/",
+        "status": "complete",
+        "note": "OpenAI 임베딩 API"
+      },
+      "sermon-system/index.html": {
+        "nas": "/volume1/sermons/html/index.html",
+        "github": "projects/sermon-system/index.html",
+        "status": "deploy-ready",
+        "note": "설교 검색 포털"
+      },
+      "praise-hq/index.html": {
+        "nas": "/volume1/praise/index.html",
+        "github": "projects/praise-hq/index.html",
+        "status": "complete",
+        "note": "v2.0 완성 — 기존 파일 완전 업그레이드"
+      },
+      "memory/CLAUDE_CONTEXT.json": {
+        "nas": "/volume1/claude/claude-context.json",
+        "github": "memory/CLAUDE_CONTEXT.json",
+        "status": "live",
+        "note": "이 파일"
+      }
+    },
+    "retired": [
+      "hermes_pro_dashboard.html",
+      "hermes_mission_control_dark.html",
+      "hermes-mc.html"
+    ]
+  },
+  "projects": {
+    "PROJECT-001": {
+      "name": "설교사령부",
+      "emoji": "📖",
+      "status": "deploy-ready",
+      "progress": 80,
+      "stack": "Supabase + pgvector + Python + nginx + #060810 dark",
+      "supabase": {
+        "tables": [
+          "sermons",
+          "sermon_chunks",
+          "sermon_relations",
+          "sermon_views"
+        ],
+        "functions": [
+          "search_sermons",
+          "search_chunks",
+          "increment_view"
+        ]
+      },
+      "port": 8080,
+      "next_tasks": [
+        "bash /volume1/claude/HERMES_DEPLOY_001.sh 실행",
+        "Supabase SQL Editor → 01_schema.sql 실행",
+        "Supabase Storage → 버킷 sermons 생성 (Public ON)",
+        "supabase functions deploy embed",
+        "docker exec sermon-pipeline python pipeline.py --batch (3000개)",
+        "Obsidian ↔ Supabase 양방향 동기화 구현"
+      ]
+    },
+    "PROJECT-002": {
+      "name": "찬양사령부",
+      "emoji": "🎵",
+      "status": "complete",
+      "progress": 100,
+      "stack": "#060810 dark (설교사령부와 동일 디자인 시스템)",
+      "next_tasks": [
+        "GitHub projects/praise-hq/index.html 에 push",
+        "NAS /volume1/praise/index.html 배포",
+        "yeshuaworld.org 에 업로드",
+        "Ableton Live + KeyLab 66 MIDI 연결",
+        "Supabase DB 연동 (찬양 DB 구축 시작)"
+      ],
+      "note": "v2.0 완성 — #060810 다크, 찬양DB+AI반주+로드맵+파일관리 통합. 기존 yeshuaworld_praise_command.html 완전 업그레이드"
+    },
+    "PROJECT-003": {
+      "name": "헤르메스 HQ",
+      "emoji": "⬡",
+      "status": "complete",
+      "progress": 100,
+      "note": "3개 중복 파일 → 단일 통합 완료. 4탭: 미션컨트롤/AI채팅/스킬/모니터링"
+    }
+  },
+  "github": {
+    "account": "gscnycom@gmail.com",
+    "repo": "gscnycom/claude-hq",
+    "main_branch": "main",
+    "raw_base": "https://raw.githubusercontent.com/gscnycom/claude-hq/main/",
+    "context_url": "https://raw.githubusercontent.com/gscnycom/claude-hq/main/memory/CLAUDE_CONTEXT.json",
+    "how_claude_reads": "web_fetch('https://raw.githubusercontent.com/gscnycom/claude-hq/main/memory/CLAUDE_CONTEXT.json')"
+  },
+  "history": [
+    {
+      "session": 1,
+      "date": "2026-06",
+      "work": "설교 시스템 아키텍처 설계"
+    },
+    {
+      "session": 2,
+      "date": "2026-06",
+      "work": "Supabase 스키마 + Python 파이프라인 v1"
+    },
+    {
+      "session": 3,
+      "date": "2026-06",
+      "work": "HTML 포털 + Edge Function"
+    },
+    {
+      "session": 4,
+      "date": "2026-06",
+      "work": "#060810 다크테마 전체 UI 통합"
+    },
+    {
+      "session": 5,
+      "date": "2026-06",
+      "work": "sermon-system.zip 패키징"
+    },
+    {
+      "session": 6,
+      "date": "2026-06",
+      "work": "MASTER_CONTEXT + HERMES_DEPLOY_001.sh 스크립트"
+    },
+    {
+      "session": 7,
+      "date": "2026-06",
+      "work": "중복 파일 레지스트리 구축, 헤르메스 HQ 3→1 통합"
+    },
+    {
+      "session": 8,
+      "date": "2026-06",
+      "work": "GitHub 영구 기억 시스템 구축, CLAUDE_CONTEXT.json 생성"
+    },
+    {
+      "session": 9,
+      "date": "2026-06-15",
+      "work": "찬양사령부 v2.0 완성 — #060810 다크테마, 기존 파일 업그레이드. 두 파일(index.html=헤르메스HQ, yeshuaworld_praise_command.html=찬양사령부) 확인 완료"
+    }
+  ]
 }

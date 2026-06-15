@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>헤르메스 HQ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   헤르메스 HQ — 통합 대시보드
+   85인치 8K 최적화 | #060810 다크 베이스
+   replaces: hermes_pro_dashboard.html
+             hermes_mission_control_dark.html
+             hermes-mc.html
+   path: /volume1/claude/dashboard/index.html
+═══════════════════════════════════════════════════ */
+:root {
+  --bg:       #060810;
+  --s1:       #090d18;
+  --s2:       #0d1220;
+  --s3:       #111828;
+  --border:   #1a2035;
+  --border2:  #232d45;
+  --text:     #dde2f0;
+  --muted:    #4a5370;
+  --dim:      #2a3050;
+
+  /* 시스템 색상 */
+  --green:  #00e5a0;   /* 온라인·성공 */
+  --blue:   #4d9fff;   /* 정보·AI    */
+  --amber:  #ffb830;   /* 경고·대기  */
+  --red:    #ff4d6a;   /* 오류·위험  */
+  --purple: #a78bfa;   /* 스킬·특수  */
+
+  --font-mono: 'SF Mono','Fira Code','Consolas',monospace;
+  --r: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;height:100%}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── 상단 바 ── */
+.topbar{
+  height:48px;
+  background:var(--s1);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  gap:20px;
+  flex-shrink:0;
+  z-index:100;
+}
+.logo{
+  font-size:15px;
+  font-weight:800;
+  letter-spacing:.04em;
+  color:var(--green);
+  font-family:var(--font-mono);
+  white-space:nowrap;
+}
+.logo span{color:var(--muted);font-weight:400}
+
+.status-dots{display:flex;gap:12px;align-items:center}
+.dot{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--muted);
+  font-family:var(--font-mono);
+}
+.dot::before{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:var(--dim);
+}
+.dot.online::before{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.busy::before{background:var(--amber)}
+.dot.offline::before{background:var(--red)}
+
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.time-display{
+  font-family:var(--font-mono);
+  font-size:13px;
+  color:var(--muted);
+  letter-spacing:.05em;
+}
+.top-nav{display:flex;gap:2px}
+.tnav{
+  padding:5px 14px;
+  background:none;
+  border:1px solid transparent;
+  border-radius:6px;
+  color:var(--muted);
+  font-size:12px;
+  cursor:pointer;
+  transition:all .15s;
+  white-space:nowrap;
+  font-family:inherit;
+}
+.tnav:hover{color:var(--text);background:var(--s2)}
+.tnav.active{color:var(--green);background:rgba(0,229,160,.08);border-color:rgba(0,229,160,.2)}
+
+/* ── 레이아웃 ── */
+.workspace{
+  flex:1;
+  display:grid;
+  grid-template-columns:220px 1fr;
+  grid-template-rows:1fr;
+  overflow:hidden;
+}
+
+/* ── 사이드바 ── */
+.sidebar{
+  background:var(--s1);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-section{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-label{
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:8px;
+  font-family:var(--font-mono);
+}
+.agent-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 8px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:background .12s;
+  margin-bottom:2px;
+}
+.agent-item:hover{background:var(--s2)}
+.agent-item.active{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.15)}
+.agent-avatar{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+  font-family:var(--font-mono);flex-shrink:0;
+}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:13px;font-weight:600;line-height:1.2}
+.agent-role{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-status{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* 프로젝트 링크 */
+.proj-link{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:12px;
+  color:var(--muted);
+  transition:all .12s;
+  margin-bottom:2px;
+}
+.proj-link:hover{color:var(--text);background:var(--s2)}
+.proj-link .pill{
+  font-size:9px;
+  padding:1px 6px;
+  border-radius:20px;
+  margin-left:auto;
+  font-family:var(--font-mono);
+}
+
+/* ── 메인 콘텐츠 ── */
+.main{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── 패널 시스템 ── */
+.panel{display:none;flex:1;overflow:hidden}
+.panel.active{display:flex}
+
+/* ═══ PANEL 1: 미션 컨트롤 ═══ */
+#panel-mission{
+  display:none;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:auto 1fr;
+  gap:1px;
+  background:var(--border);
+  flex:1;
+}
+#panel-mission.active{display:grid}
+
+.mc-cell{
+  background:var(--bg);
+  padding:16px;
+  overflow:auto;
+}
+.mc-cell.span2{grid-column:span 2}
+.mc-cell.span3{grid-column:span 3}
+
+.cell-hd{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.cell-title{
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  font-family:var(--font-mono);
+}
+.cell-badge{
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:20px;
+  font-family:var(--font-mono);
+}
+
+/* 메트릭 카드 */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metric{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:12px;
+}
+.m-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-family:var(--font-mono)}
+.m-val{font-size:22px;font-weight:800;line-height:1;font-family:var(--font-mono)}
+.m-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* 작업 로그 */
+.log-stream{
+  font-family:var(--font-mono);
+  font-size:12px;
+  line-height:1.8;
+  color:var(--muted);
+  height:100%;
+  overflow-y:auto;
+}
+.log-line{display:flex;gap:10px}
+.log-time{color:var(--dim);flex-shrink:0}
+.log-agent{flex-shrink:0;font-weight:700}
+.log-msg{color:var(--text)}
+.log-ok{color:var(--green)}
+.log-warn{color:var(--amber)}
+.log-err{color:var(--red)}
+
+/* 프로젝트 카드 */
+.proj-cards{display:flex;flex-direction:column;gap:8px}
+.proj-card{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:12px 14px;
+  cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--border2)}
+.proj-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.proj-card-name{font-size:13px;font-weight:700}
+.proj-progress{
+  height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin-bottom:6px;
+}
+.proj-progress-fill{height:100%;border-radius:2px;transition:width .6s ease}
+.proj-meta{font-size:11px;color:var(--muted)}
+
+/* 스킬 그리드 */
+.skills-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.skill-card{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:10px 12px;
+  cursor:pointer;
+  transition:border-color .15s;
+}
+.skill-card:hover{border-color:var(--purple);background:rgba(167,139,250,.05)}
+.skill-icon{font-size:18px;margin-bottom:4px}
+.skill-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.skill-desc{font-size:10px;color:var(--muted);line-height:1.4}
+
+/* ═══ PANEL 2: AI 채팅 ═══ */
+#panel-chat{
+  flex-direction:column;
+  overflow:hidden;
+}
+.chat-layout{
+  flex:1;
+  display:grid;
+  grid-template-columns:1fr 280px;
+  overflow:hidden;
+}
+.chat-main{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+
+.chat-messages{
+  flex:1;
+  overflow-y:auto;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.msg{display:flex;gap:10px;align-items:flex-start}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{
+  width:30px;height:30px;border-radius:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;font-family:var(--font-mono);
+}
+.msg-bubble{
+  max-width:68%;
+  padding:10px 14px;
+  border-radius:10px;
+  font-size:13px;
+  line-height:1.7;
+  white-space:pre-wrap;
+}
+.msg.assistant .msg-bubble{
+  background:var(--s2);
+  border:1px solid var(--border);
+  color:var(--text);
+}
+.msg.user .msg-bubble{
+  background:rgba(0,229,160,.1);
+  border:1px solid rgba(0,229,160,.2);
+  color:var(--text);
+}
+.msg-meta{font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--font-mono)}
+
+.chat-input-area{
+  padding:12px 16px;
+  border-top:1px solid var(--border);
+  background:var(--s1);
+}
+.chat-target-row{
+  display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;
+}
+.target-btn{
+  padding:3px 10px;
+  border-radius:20px;
+  border:1px solid var(--border2);
+  background:none;
+  color:var(--muted);
+  font-size:11px;
+  cursor:pointer;
+  transition:all .12s;
+  font-family:inherit;
+}
+.target-btn.active{color:var(--green);border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.07)}
+.chat-row{display:flex;gap:8px}
+.chat-in{
+  flex:1;
+  padding:9px 14px;
+  background:var(--s2);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  color:var(--text);
+  font-size:13px;
+  font-family:inherit;
+  resize:none;
+  min-height:44px;
+  max-height:100px;
+  outline:none;
+  transition:border-color .15s;
+  line-height:1.5;
+}
+.chat-in:focus{border-color:var(--green)}
+.chat-in::placeholder{color:var(--muted)}
+.send-btn{
+  padding:9px 18px;
+  background:var(--green);
+  color:#030a06;
+  border:none;
+  border-radius:var(--r);
+  font-size:13px;
+  font-weight:800;
+  cursor:pointer;
+  transition:opacity .15s;
+  white-space:nowrap;
+  font-family:inherit;
+}
+.send-btn:hover{opacity:.88}
+.send-btn:disabled{opacity:.4;cursor:wait}
+
+/* 채팅 사이드 패널 */
+.chat-side{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:var(--s1);
+}
+.side-tabs{
+  display:flex;
+  border-bottom:1px solid var(--border);
+}
+.side-tab{
+  flex:1;
+  padding:9px;
+  background:none;
+  border:none;
+  color:var(--muted);
+  font-size:11px;
+  cursor:pointer;
+  transition:all .12s;
+  border-bottom:2px solid transparent;
+  font-family:inherit;
+}
+.side-tab.active{color:var(--green);border-bottom-color:var(--green)}
+.side-body{flex:1;overflow-y:auto;padding:12px}
+.context-item{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:8px 10px;
+  margin-bottom:6px;
+  font-size:11px;
+}
+.ctx-label{color:var(--muted);font-size:10px;margin-bottom:2px;font-family:var(--font-mono)}
+.ctx-val{color:var(--text);line-height:1.5}
+
+/* ═══ PANEL 3: 스킬 관리 ═══ */
+#panel-skills{
+  flex-direction:column;
+  overflow:hidden;
+}
+.skills-toolbar{
+  padding:12px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  gap:8px;
+  align-items:center;
+  background:var(--s1);
+}
+.skills-search{
+  flex:1;
+  max-width:320px;
+  padding:7px 12px;
+  background:var(--s2);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  color:var(--text);
+  font-size:13px;
+  outline:none;
+  font-family:inherit;
+}
+.skills-search:focus{border-color:var(--purple)}
+.skills-filter{
+  padding:7px 12px;
+  background:var(--s2);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  color:var(--text);
+  font-size:12px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.skills-grid-main{
+  flex:1;
+  overflow-y:auto;
+  padding:20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px;
+  align-content:start;
+}
+.skill-full{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px;
+  cursor:pointer;
+  transition:all .15s;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.skill-full:hover{border-color:var(--purple);background:rgba(167,139,250,.06)}
+.skill-full-hd{display:flex;align-items:center;gap:10px}
+.skill-ico{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.skill-full-name{font-size:14px;font-weight:700}
+.skill-full-cat{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-mono)}
+.skill-full-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.skill-full-foot{display:flex;gap:6px;flex-wrap:wrap}
+.skill-tag{
+  font-size:10px;
+  padding:2px 7px;
+  border-radius:20px;
+  background:var(--s3);
+  color:var(--dim);
+  border:1px solid var(--border);
+}
+.skill-run-btn{
+  margin-left:auto;
+  padding:4px 12px;
+  background:rgba(167,139,250,.12);
+  border:1px solid rgba(167,139,250,.25);
+  border-radius:6px;
+  color:var(--purple);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .15s;
+  white-space:nowrap;
+}
+.skill-run-btn:hover{background:rgba(167,139,250,.22)}
+
+/* ═══ PANEL 4: 모니터링 ═══ */
+#panel-monitor{
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+}
+#panel-monitor.active{display:flex}
+.monitor-grid{
+  flex:1;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:auto 1fr auto;
+  gap:1px;
+  background:var(--border);
+  overflow:hidden;
+}
+.mon-cell{
+  background:var(--bg);
+  padding:14px 16px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+}
+.mon-cell.wide{grid-column:span 2}
+.mon-cell.full{grid-column:span 3}
+
+/* 터미널 */
+.terminal{
+  background:#000;
+  border-radius:6px;
+  padding:12px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  line-height:1.7;
+  flex:1;
+  overflow-y:auto;
+  color:#00e5a0;
+}
+.term-prompt{color:var(--muted)}
+.term-cmd{color:var(--text)}
+.term-out{color:#6b7280}
+.term-cursor{
+  display:inline-block;width:8px;height:14px;
+  background:var(--green);
+  animation:blink 1s step-end infinite;
+  vertical-align:text-bottom;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* 시스템 게이지 */
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gauge{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:10px 12px;
+}
+.gauge-label{font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:5px}
+.gauge-track{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;margin-bottom:4px}
+.gauge-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.gauge-val{font-size:13px;font-weight:700;font-family:var(--font-mono)}
+
+/* 이벤트 피드 */
+.event-feed{display:flex;flex-direction:column;gap:5px;flex:1;overflow-y:auto}
+.event{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:7px 10px;
+  border-radius:6px;
+  background:var(--s2);
+  font-size:11px;
+  border-left:2px solid var(--dim);
+}
+.event.ok{border-left-color:var(--green)}
+.event.warn{border-left-color:var(--amber)}
+.event.err{border-left-color:var(--red)}
+.event.info{border-left-color:var(--blue)}
+.event-time{color:var(--muted);font-family:var(--font-mono);flex-shrink:0}
+.event-msg{color:var(--text);flex:1}
+
+/* ── 공통 유틸 ── */
+.badge-ok{background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.2)}
+.badge-warn{background:rgba(255,184,48,.1);color:var(--amber);border:1px solid rgba(255,184,48,.2)}
+.badge-err{background:rgba(255,77,106,.1);color:var(--red);border:1px solid rgba(255,77,106,.2)}
+.badge-info{background:rgba(77,159,255,.1);color:var(--blue);border:1px solid rgba(77,159,255,.2)}
+.badge-purple{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+.mini-btn{
+  padding:3px 10px;border-radius:5px;border:1px solid var(--border2);
+  background:var(--s2);color:var(--muted);font-size:11px;cursor:pointer;
+  font-family:inherit;transition:all .12s;
+}
+.mini-btn:hover{color:var(--text);border-color:var(--green)}
+</style>
+</head>
+<body>
+
+<!-- ── 상단 바 ── -->
+<div class="topbar">
+  <div class="logo">⬡ HERMES<span> HQ</span></div>
+  <div class="status-dots">
+    <div class="dot online" id="dot-hermes">헤르메스</div>
+    <div class="dot busy"   id="dot-sisyphus">시시포스</div>
+    <div class="dot offline" id="dot-openclue">오픈클루</div>
+    <div class="dot online" id="dot-claude">Claude</div>
+  </div>
+  <div class="topbar-right">
+    <div class="time-display" id="clock">--:--:--</div>
+    <nav class="top-nav">
+      <button class="tnav active" onclick="switchPanel('mission',this)">미션 컨트롤</button>
+      <button class="tnav"        onclick="switchPanel('chat',this)">AI 채팅</button>
+      <button class="tnav"        onclick="switchPanel('skills',this)">스킬</button>
+      <button class="tnav"        onclick="switchPanel('monitor',this)">모니터</button>
+    </nav>
+  </div>
+</div>
+
+<!-- ── 워크스페이스 ── -->
+<div class="workspace">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">에이전트</div>
+      <div class="agent-item active" onclick="setTarget('hermes')">
+        <div class="agent-avatar" style="background:rgba(0,229,160,.12);color:var(--green)">H</div>
+        <div class="agent-info">
+          <div class="agent-name">헤르메스</div>
+          <div class="agent-role">NAS 터미널 에이전트</div>
+        </div>
+        <div class="agent-status" style="background:var(--green)"></div>
+      </div>
+      <div class="agent-item" onclick="setTarget('sisyphus')">
+        <div class="agent-avatar" style="background:rgba(255,184,48,.1);color:var(--amber)">S</div>
+        <div class="agent-info">
+          <div class="agent-name">시시포스</div>
+          <div class="agent-role">OhMyOpenCode</div>
+        </div>
+        <div class="agent-status" style="background:var(--amber)"></div>
+      </div>
+      <div class="agent-item" onclick="setTarget('openclue')">
+        <div class="agent-avatar" style="background:rgba(77,159,255,.1);color:var(--blue)">O</div>
+        <div class="agent-info">
+          <div class="agent-name">오픈클루</div>
+          <div class="agent-role">OpenClue</div>
+        </div>
+        <div class="agent-status" style="background:var(--red)"></div>
+      </div>
+      <div class="agent-item" onclick="setTarget('claude')">
+        <div class="agent-avatar" style="background:rgba(167,139,250,.1);color:var(--purple)">C</div>
+        <div class="agent-info">
+          <div class="agent-name">Claude</div>
+          <div class="agent-role">AI 지휘관</div>
+        </div>
+        <div class="agent-status" style="background:var(--green)"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1;overflow-y:auto">
+      <div class="sidebar-label">프로젝트</div>
+      <div class="proj-link" onclick="switchPanel('mission',document.querySelector('.tnav'))">
+        <span>📖 설교사령부</span>
+        <span class="pill badge-ok">배포 대기</span>
+      </div>
+      <div class="proj-link">
+        <span>🎵 찬양사령부</span>
+        <span class="pill badge-warn">통합 중</span>
+      </div>
+      <div class="proj-link">
+        <span>⬡ 헤르메스 HQ</span>
+        <span class="pill badge-purple">이 파일</span>
+      </div>
+      <div style="margin-top:12px">
+        <div class="sidebar-label">빠른 실행</div>
+        <div class="proj-link" onclick="runQuickCmd('docker ps')">▶ docker ps</div>
+        <div class="proj-link" onclick="runQuickCmd('df -h /volume1')">▶ 디스크 확인</div>
+        <div class="proj-link" onclick="runQuickCmd('docker logs sermon-pipeline --tail 20')">▶ 파이프라인 로그</div>
+        <div class="proj-link" onclick="runQuickCmd('python pipeline.py --batch')">▶ PPT 일괄 처리</div>
+      </div>
+    </div>
+
+    <div style="padding:10px 12px;border-top:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">
+        MASTER_CONTEXT.md<br>
+        <span style="color:var(--dim)">/volume1/claude/</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="main">
+
+    <!-- ══ PANEL: 미션 컨트롤 ══ -->
+    <div class="panel active" id="panel-mission">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr;gap:1px;background:var(--border);flex:1">
+
+        <!-- 메트릭 행 -->
+        <div class="mc-cell span3" style="padding:14px 20px">
+          <div class="metrics-row">
+            <div class="metric">
+              <div class="m-label">설교 수</div>
+              <div class="m-val" style="color:var(--green)" id="m-sermons">—</div>
+              <div class="m-sub">Supabase DB</div>
+            </div>
+            <div class="metric">
+              <div class="m-label">색인 완료</div>
+              <div class="m-val" style="color:var(--blue)" id="m-indexed">—</div>
+              <div class="m-sub">pgvector</div>
+            </div>
+            <div class="metric">
+              <div class="m-label">도커 컨테이너</div>
+              <div class="m-val" style="color:var(--amber)" id="m-docker">2</div>
+              <div class="m-sub">sermon-web / pipeline</div>
+            </div>
+            <div class="metric">
+              <div class="m-label">NAS 포트</div>
+              <div class="m-val" style="color:var(--purple)">8080</div>
+              <div class="m-sub">nginx 서비스</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 프로젝트 상태 -->
+        <div class="mc-cell">
+          <div class="cell-hd">
+            <span class="cell-title">프로젝트 현황</span>
+          </div>
+          <div class="proj-cards">
+            <div class="proj-card" onclick="switchPanel('chat',document.querySelectorAll('.tnav')[1])">
+              <div class="proj-card-hd">
+                <span class="proj-card-name">📖 설교사령부</span>
+                <span class="cell-badge badge-warn">배포 대기</span>
+              </div>
+              <div class="proj-progress"><div class="proj-progress-fill" style="width:80%;background:var(--green)"></div></div>
+              <div class="proj-meta">sermon-system.zip 완성 → 헤르메스 배포 필요</div>
+            </div>
+            <div class="proj-card">
+              <div class="proj-card-hd">
+                <span class="proj-card-name">🎵 찬양사령부</span>
+                <span class="cell-badge badge-warn">통합 중</span>
+              </div>
+              <div class="proj-progress"><div class="proj-progress-fill" style="width:40%;background:var(--amber)"></div></div>
+              <div class="proj-meta">기존 파일 파악 → 설교사령부 통합 또는 독립</div>
+            </div>
+            <div class="proj-card">
+              <div class="proj-card-hd">
+                <span class="proj-card-name">⬡ 헤르메스 HQ</span>
+                <span class="cell-badge badge-ok">완성</span>
+              </div>
+              <div class="proj-progress"><div class="proj-progress-fill" style="width:100%;background:var(--purple)"></div></div>
+              <div class="proj-meta">3개 중복 파일 → 이 파일로 통합 완료</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 스킬 미리보기 -->
+        <div class="mc-cell">
+          <div class="cell-hd">
+            <span class="cell-title">주요 스킬</span>
+            <button class="mini-btn" onclick="switchPanel('skills',document.querySelectorAll('.tnav')[2])">전체 보기</button>
+          </div>
+          <div class="skills-grid">
+            <div class="skill-card">
+              <div class="skill-icon">📂</div>
+              <div class="skill-name">파일 정리</div>
+              <div class="skill-desc">중복 제거·폴더 구조 표준화</div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-icon">🐳</div>
+              <div class="skill-name">Docker 관리</div>
+              <div class="skill-desc">컨테이너 실행·모니터링</div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-icon">⚡</div>
+              <div class="skill-name">PPT 파이프라인</div>
+              <div class="skill-desc">Supabase 자동 업로드</div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-icon">🔍</div>
+              <div class="skill-name">의미 검색</div>
+              <div class="skill-desc">pgvector RAG 검색</div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-icon">🤖</div>
+              <div class="skill-name">Claude 연동</div>
+              <div class="skill-desc">AI 지시·응답 처리</div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-icon">📊</div>
+              <div class="skill-name">Supabase DB</div>
+              <div class="skill-desc">PostgreSQL + pgvector</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 작업 로그 -->
+        <div class="mc-cell">
+          <div class="cell-hd">
+            <span class="cell-title">작업 로그</span>
+            <button class="mini-btn" onclick="clearLog()">지우기</button>
+          </div>
+          <div class="log-stream" id="log-stream">
+            <div class="log-line"><span class="log-time">00:00:00</span><span class="log-agent" style="color:var(--purple)">[CLAUDE]</span><span class="log-msg log-ok"> 헤르메스 HQ 초기화 완료</span></div>
+            <div class="log-line"><span class="log-time">00:00:01</span><span class="log-agent" style="color:var(--purple)">[CLAUDE]</span><span class="log-msg"> 중복 파일 3개 → 단일 HQ로 통합</span></div>
+            <div class="log-line"><span class="log-time">00:00:01</span><span class="log-agent" style="color:var(--purple)">[CLAUDE]</span><span class="log-msg"> MASTER_CONTEXT.md 영구 기억 등록</span></div>
+            <div class="log-line"><span class="log-time">00:00:02</span><span class="log-agent" style="color:var(--green)">[HERMES]</span><span class="log-msg log-warn"> 대기 중 — HERMES_DEPLOY_001.sh 실행 필요</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ PANEL: AI 채팅 ══ -->
+    <div class="panel" id="panel-chat" style="flex-direction:column">
+      <div class="chat-layout" style="flex:1;overflow:hidden">
+        <div class="chat-main">
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg assistant">
+              <div class="msg-avatar" style="background:rgba(167,139,250,.1);color:var(--purple)">C</div>
+              <div>
+                <div class="msg-bubble">안녕하세요. 헤르메스 HQ입니다.
+
+현재 프로젝트 현황:
+• 설교사령부 — sermon-system.zip 완성, 배포 대기
+• 찬양사령부 — 파일 내용 파악 후 통합 예정
+• 중복 파일 3개 → 이 HQ로 통합 완료
+
+어떤 작업을 도와드릴까요?</div>
+                <div class="msg-meta">Claude · 지금</div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-target-row">
+              <span style="font-size:11px;color:var(--muted);margin-right:4px">전송 대상:</span>
+              <button class="target-btn active" id="t-claude"   onclick="setActiveTarget('claude')">Claude</button>
+              <button class="target-btn"        id="t-hermes"   onclick="setActiveTarget('hermes')">헤르메스</button>
+              <button class="target-btn"        id="t-sisyphus" onclick="setActiveTarget('sisyphus')">시시포스</button>
+              <button class="target-btn"        id="t-openclue" onclick="setActiveTarget('openclue')">오픈클루</button>
+            </div>
+            <div class="chat-row">
+              <textarea class="chat-in" id="chat-in" rows="2"
+                placeholder="명령 또는 질문 입력... (Enter 전송, Shift+Enter 줄바꿈)"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+              <button class="send-btn" id="send-btn" onclick="sendChat()">전송</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 사이드 패널 -->
+        <div class="chat-side">
+          <div class="side-tabs">
+            <button class="side-tab active" onclick="setSideTab('context',this)">컨텍스트</button>
+            <button class="side-tab"        onclick="setSideTab('history',this)">이력</button>
+          </div>
+          <div class="side-body" id="side-body">
+            <div class="context-item">
+              <div class="ctx-label">현재 프로젝트</div>
+              <div class="ctx-val">PROJECT-001 설교사령부</div>
+            </div>
+            <div class="context-item">
+              <div class="ctx-label">NAS 경로</div>
+              <div class="ctx-val">/volume1/sermons/</div>
+            </div>
+            <div class="context-item">
+              <div class="ctx-label">Supabase</div>
+              <div class="ctx-val">pgvector + Edge Functions</div>
+            </div>
+            <div class="context-item">
+              <div class="ctx-label">다크 테마</div>
+              <div class="ctx-val">#060810</div>
+            </div>
+            <div class="context-item">
+              <div class="ctx-label">마스터 파일</div>
+              <div class="ctx-val" style="font-size:10px;font-family:var(--font-mono)">/volume1/claude/MASTER_CONTEXT.md</div>
+            </div>
+            <div class="context-item">
+              <div class="ctx-label">폐기 파일</div>
+              <div class="ctx-val" style="color:var(--red);font-size:11px">
+                hermes_pro_dashboard.html<br>
+                hermes_mission_control_dark.html<br>
+                hermes-mc.html
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PANEL: 스킬 관리 ══ -->
+    <div class="panel" id="panel-skills" style="flex-direction:column">
+      <div class="skills-toolbar">
+        <input class="skills-search" type="text" placeholder="스킬 검색..." oninput="filterSkills(this.value)">
+        <select class="skills-filter" onchange="filterSkills()">
+          <option value="">전체 카테고리</option>
+          <option value="hermes">헤르메스</option>
+          <option value="claude">Claude</option>
+          <option value="supabase">Supabase</option>
+          <option value="file">파일 관리</option>
+        </select>
+        <button class="mini-btn" style="margin-left:auto" onclick="addSkill()">+ 스킬 추가</button>
+      </div>
+      <div class="skills-grid-main" id="skills-grid">
+        <!-- JS로 렌더링 -->
+      </div>
+    </div>
+
+    <!-- ══ PANEL: 모니터링 ══ -->
+    <div class="panel" id="panel-monitor" style="flex-direction:column">
+      <div class="monitor-grid">
+        <!-- 터미널 -->
+        <div class="mon-cell wide">
+          <div class="cell-hd">
+            <span class="cell-title">터미널 출력</span>
+            <button class="mini-btn" onclick="clearTerm()">지우기</button>
+          </div>
+          <div class="terminal" id="terminal">
+            <div><span class="term-prompt">hermes@nas:~$ </span><span class="term-cmd">echo "헤르메스 HQ 초기화 완료"</span></div>
+            <div class="term-out">헤르메스 HQ 초기화 완료</div>
+            <div><span class="term-prompt">hermes@nas:~$ </span><span class="term-cmd">ls /volume1/claude/</span></div>
+            <div class="term-out">MASTER_CONTEXT.md  HERMES_DEPLOY_001.sh  dashboard/  sermon-system/</div>
+            <div><span class="term-prompt">hermes@nas:~$ </span><span class="term-cursor"></span></div>
+          </div>
+        </div>
+
+        <!-- 시스템 게이지 -->
+        <div class="mon-cell">
+          <div class="cell-hd"><span class="cell-title">시스템 상태</span></div>
+          <div class="gauges">
+            <div class="gauge">
+              <div class="gauge-label">CPU</div>
+              <div class="gauge-track"><div class="gauge-fill" id="g-cpu" style="width:35%;background:var(--green)"></div></div>
+              <div class="gauge-val" id="v-cpu" style="color:var(--green)">35%</div>
+            </div>
+            <div class="gauge">
+              <div class="gauge-label">RAM</div>
+              <div class="gauge-track"><div class="gauge-fill" id="g-ram" style="width:62%;background:var(--blue)"></div></div>
+              <div class="gauge-val" id="v-ram" style="color:var(--blue)">62%</div>
+            </div>
+            <div class="gauge">
+              <div class="gauge-label">디스크</div>
+              <div class="gauge-track"><div class="gauge-fill" id="g-disk" style="width:48%;background:var(--purple)"></div></div>
+              <div class="gauge-val" id="v-disk" style="color:var(--purple)">48%</div>
+            </div>
+            <div class="gauge">
+              <div class="gauge-label">네트워크</div>
+              <div class="gauge-track"><div class="gauge-fill" id="g-net" style="width:20%;background:var(--amber)"></div></div>
+              <div class="gauge-val" id="v-net" style="color:var(--amber)">20%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 이벤트 피드 -->
+        <div class="mon-cell full" style="max-height:200px">
+          <div class="cell-hd"><span class="cell-title">이벤트 피드</span></div>
+          <div class="event-feed" id="event-feed">
+            <div class="event ok"><span class="event-time">00:00:00</span><span class="event-msg">헤르메스 HQ 단일 파일로 통합 완료 (3→1)</span></div>
+            <div class="event ok"><span class="event-time">00:00:01</span><span class="event-msg">MASTER_CONTEXT.md 영구 기억 등록</span></div>
+            <div class="event warn"><span class="event-time">00:00:02</span><span class="event-msg">설교사령부 — 배포 대기 중 (HERMES_DEPLOY_001.sh)</span></div>
+            <div class="event info"><span class="event-time">00:00:03</span><span class="event-msg">찬양사령부 — 파일 첨부 후 통합 예정</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  상태
+// ══════════════════════════════════════
+let activeTarget = 'claude';
+let chatHistory  = [];
+let activeSideTab = 'context';
+
+// ══════════════════════════════════════
+//  시계
+// ══════════════════════════════════════
+function tick() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toTimeString().slice(0,8);
+}
+tick();
+setInterval(tick, 1000);
+
+// ══════════════════════════════════════
+//  패널 전환
+// ══════════════════════════════════════
+function switchPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tnav').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ══════════════════════════════════════
+//  에이전트 선택
+// ══════════════════════════════════════
+function setTarget(name) {
+  document.querySelectorAll('.agent-item').forEach(a => a.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  setActiveTarget(name);
+  switchPanel('chat', document.querySelectorAll('.tnav')[1]);
+}
+
+function setActiveTarget(name) {
+  activeTarget = name;
+  document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('t-' + name);
+  if (el) el.classList.add('active');
+}
+
+// ══════════════════════════════════════
+//  채팅
+// ══════════════════════════════════════
+async function sendChat() {
+  const inp = document.getElementById('chat-in');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+
+  appendMsg('user', msg, activeTarget);
+  const loadId = appendMsg('assistant', '', 'claude');
+  setTyping(loadId);
+
+  document.getElementById('send-btn').disabled = true;
+
+  // 로그 기록
+  addLog('CLAUDE', `[${activeTarget.toUpperCase()}] ${msg}`, 'ok');
+
+  try {
+    chatHistory.push({ role: 'user', content: `[${activeTarget}에게 지시] ${msg}` });
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `당신은 헤르메스 HQ의 AI 지휘관입니다.
+에이전트: 헤르메스(NAS터미널), 시시포스(OhMyOpenCode), 오픈클루(OpenClue)
+현재 전달 대상: ${activeTarget}
+
+규칙:
+- 비슷한 파일 중복 생성 절대 금지
+- 1프로젝트 = 1 index.html 원칙
+- 새 파일 전 MASTER_CONTEXT.md FILE REGISTRY 확인
+
+진행 중 프로젝트:
+- PROJECT-001 설교사령부: sermon-system.zip 완성, 배포 대기
+- PROJECT-002 찬양사령부: 파일 파악 필요
+- PROJECT-003 헤르메스 HQ: 이 파일로 통합 완료
+
+헤르메스에게는 bash 명령어 형식으로, 
+시시포스에게는 코드 작업 형식으로,
+오픈클루에게는 분석/검색 형식으로 응답하세요.`,
+        messages: chatHistory.slice(-8),
+      }),
+    });
+
+    const data  = await resp.json();
+    const reply = data?.content?.[0]?.text || '응답 없음';
+    chatHistory.push({ role: 'assistant', content: reply });
+    updateMsg(loadId, reply);
+    addLog(activeTarget.toUpperCase(), '응답 수신', 'ok');
+  } catch(e) {
+    updateMsg(loadId, `오류: ${e.message}`);
+    addLog('ERROR', e.message, 'err');
+  } finally {
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+let msgId = 0;
+function appendMsg(role, text, agent) {
+  const id  = 'msg-' + (++msgId);
+  const box = document.getElementById('chat-messages');
+  const colors = {hermes:'var(--green)',sisyphus:'var(--amber)',openclue:'var(--blue)',claude:'var(--purple)',user:'var(--dim)'};
+  const labels = {hermes:'H',sisyphus:'S',openclue:'O',claude:'C',user:'나'};
+  const color = colors[agent] || 'var(--muted)';
+  const label = labels[agent] || '?';
+  const agentName = {hermes:'헤르메스',sisyphus:'시시포스',openclue:'오픈클루',claude:'Claude',user:'나'}[agent] || agent;
+
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  el.id = id;
+  el.innerHTML = `
+    <div class="msg-avatar" style="background:rgba(100,100,100,.1);color:${color}">${label}</div>
+    <div>
+      <div class="msg-bubble">${text}</div>
+      <div class="msg-meta">${agentName} · ${new Date().toLocaleTimeString()}</div>
+    </div>`;
+  box.append(el);
+  box.scrollTop = box.scrollHeight;
+  return id;
+}
+
+function updateMsg(id, text) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.querySelector('.msg-bubble').textContent = text;
+    document.getElementById('chat-messages').scrollTop = 99999;
+  }
+}
+
+function setTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.querySelector('.msg-bubble').innerHTML =
+    '<div style="display:flex;gap:4px;align-items:center;padding:4px 0">' +
+    '<span style="width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink .8s .0s infinite ease-in-out"></span>' +
+    '<span style="width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink .8s .2s infinite ease-in-out"></span>' +
+    '<span style="width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink .8s .4s infinite ease-in-out"></span>' +
+    '</div>';
+}
+
+function setSideTab(tab, btn) {
+  activeSideTab = tab;
+  document.querySelectorAll('.side-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════
+//  로그
+// ══════════════════════════════════════
+function addLog(agent, msg, type) {
+  const stream = document.getElementById('log-stream');
+  const now    = new Date().toTimeString().slice(0,8);
+  const colors = {HERMES:'var(--green)',SISYPHUS:'var(--amber)',OPENCLUE:'var(--blue)',CLAUDE:'var(--purple)',ERROR:'var(--red)'};
+  const color  = colors[agent] || 'var(--muted)';
+  const cls    = type==='ok'?'log-ok':type==='warn'?'log-warn':type==='err'?'log-err':'';
+  const line   = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${now}</span><span class="log-agent" style="color:${color}">[${agent}]</span><span class="log-msg ${cls}"> ${msg}</span>`;
+  stream.append(line);
+  stream.scrollTop = stream.scrollHeight;
+  addEvent(msg, type);
+}
+
+function clearLog() {
+  document.getElementById('log-stream').innerHTML = '';
+}
+
+// ══════════════════════════════════════
+//  이벤트 피드
+// ══════════════════════════════════════
+function addEvent(msg, type) {
+  const feed = document.getElementById('event-feed');
+  const now  = new Date().toTimeString().slice(0,8);
+  const el   = document.createElement('div');
+  el.className = `event ${type==='ok'?'ok':type==='warn'?'warn':type==='err'?'err':'info'}`;
+  el.innerHTML = `<span class="event-time">${now}</span><span class="event-msg">${msg}</span>`;
+  feed.prepend(el);
+}
+
+// ══════════════════════════════════════
+//  터미널
+// ══════════════════════════════════════
+function runQuickCmd(cmd) {
+  const term = document.getElementById('terminal');
+  const now  = new Date().toTimeString().slice(0,8);
+  term.innerHTML += `\n<div><span class="term-prompt">hermes@nas:~$ </span><span class="term-cmd">${cmd}</span></div>`;
+  term.innerHTML += `<div class="term-out">[${now}] 명령 전송됨 → 헤르메스에서 실행 필요</div>`;
+  term.innerHTML += `<div><span class="term-prompt">hermes@nas:~$ </span><span class="term-cursor"></span></div>`;
+  term.scrollTop = term.scrollHeight;
+  addLog('HERMES', cmd, 'warn');
+  switchPanel('monitor', document.querySelectorAll('.tnav')[3]);
+}
+
+function clearTerm() {
+  document.getElementById('terminal').innerHTML =
+    '<div><span class="term-prompt">hermes@nas:~$ </span><span class="term-cursor"></span></div>';
+}
+
+// ══════════════════════════════════════
+//  스킬 데이터
+// ══════════════════════════════════════
+const SKILLS = [
+  {icon:'📂',name:'파일 정리',cat:'hermes',tags:['bash','find','rm'],desc:'중복 파일 검색·제거, 폴더 구조 표준화. NAS /volume1 기준.'},
+  {icon:'🐳',name:'Docker 관리',cat:'hermes',tags:['docker','compose'],desc:'컨테이너 실행·중지·로그 확인. sermon-web, sermon-pipeline.'},
+  {icon:'⚡',name:'PPT 파이프라인',cat:'hermes',tags:['python','pptx','supabase'],desc:'설교 PPT → 텍스트 추출 → Supabase 업로드 자동화.'},
+  {icon:'🔍',name:'의미 검색',cat:'supabase',tags:['pgvector','rpc','hnsw'],desc:'pgvector HNSW 인덱스 기반 설교 유사도 검색.'},
+  {icon:'🤖',name:'Claude 연동',cat:'claude',tags:['api','rag'],desc:'Claude API 호출, RAG 파이프라인 구성, 설교 작성 도우미.'},
+  {icon:'📊',name:'Supabase DB',cat:'supabase',tags:['postgresql','schema'],desc:'sermons + chunks + relations 스키마 관리.'},
+  {icon:'🎵',name:'찬양 관리',cat:'claude',tags:['praise','html'],desc:'찬양사령부 — 찬양 파일 관리 및 검색 포털.'},
+  {icon:'🗄',name:'Obsidian 동기화',cat:'hermes',tags:['md','sync','watchdog'],desc:'Obsidian MD ↔ Supabase 양방향 실시간 동기화.'},
+  {icon:'📡',name:'Edge Functions',cat:'supabase',tags:['deno','embed'],desc:'OpenAI Embedding API 프록시 (CORS 우회).'},
+  {icon:'🔒',name:'RLS 관리',cat:'supabase',tags:['security','policy'],desc:'Row Level Security 정책 설정·검증.'},
+  {icon:'📈',name:'통계 대시보드',cat:'claude',tags:['chart','analytics'],desc:'설교 주제·성경책·연도별 분포 시각화.'},
+  {icon:'🔄',name:'자동 관계 연결',cat:'claude',tags:['relations','ai'],desc:'sermon_relations 테이블 자동 채우기 (AI 기반).'},
+];
+
+function renderSkills(list) {
+  const grid = document.getElementById('skills-grid');
+  grid.innerHTML = list.map(s => `
+    <div class="skill-full">
+      <div class="skill-full-hd">
+        <div class="skill-ico" style="background:rgba(167,139,250,.08)">${s.icon}</div>
+        <div>
+          <div class="skill-full-name">${s.name}</div>
+          <div class="skill-full-cat">${s.cat}</div>
+        </div>
+      </div>
+      <div class="skill-full-desc">${s.desc}</div>
+      <div class="skill-full-foot">
+        ${s.tags.map(t=>`<span class="skill-tag">${t}</span>`).join('')}
+        <button class="skill-run-btn" onclick="runSkill('${s.name}')">실행</button>
+      </div>
+    </div>`).join('');
+}
+
+function filterSkills(q) {
+  const query = (q || document.querySelector('.skills-search')?.value || '').toLowerCase();
+  const cat   = document.querySelector('.skills-filter')?.value || '';
+  renderSkills(SKILLS.filter(s =>
+    (!query || s.name.includes(query) || s.desc.includes(query) || s.tags.some(t=>t.includes(query))) &&
+    (!cat   || s.cat === cat)
+  ));
+}
+
+function runSkill(name) {
+  addLog('CLAUDE', `스킬 실행 요청: ${name}`, 'ok');
+  switchPanel('chat', document.querySelectorAll('.tnav')[1]);
+  document.getElementById('chat-in').value = `[스킬 실행] ${name} 작업을 시작해줘`;
+}
+
+function addSkill() {
+  const name = prompt('새 스킬 이름:');
+  if (name) addLog('CLAUDE', `스킬 추가됨: ${name}`, 'ok');
+}
+
+renderSkills(SKILLS);
+
+// ══════════════════════════════════════
+//  게이지 애니메이션 (시뮬레이션)
+// ══════════════════════════════════════
+setInterval(() => {
+  const vals = {cpu:[20,60], ram:[50,75], disk:[45,52], net:[5,40]};
+  Object.entries(vals).forEach(([k,[lo,hi]]) => {
+    const v = Math.round(lo + Math.random()*(hi-lo));
+    document.getElementById('g-'+k).style.width = v+'%';
+    document.getElementById('v-'+k).textContent = v+'%';
+  });
+}, 3000);
+</script>
+</body>
+</html>
