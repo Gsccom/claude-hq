@@ -1,0 +1,96 @@
+{
+  "system": "HERMES COMMAND SYSTEM v1.0",
+  "version": "1.0",
+  "updated": "2026-06-18",
+  "commander": "JunPark 목사님 (박준열)",
+
+  "ai_4_rules": {
+    "rule1": "기억 초기화 → CLAUDE_CONTEXT.json 영구기억 문서로 해결",
+    "rule2": "자동실행 불가 → Hermes 크론잡 + 시시포스 스케줄러로 해결",
+    "rule3": "AI간 직접소통 불가 → Hermes 문서가 AI간 브릿지",
+    "rule4": "역할 분담 → 각 AI 전문영역 설계대로 운영"
+  },
+
+  "ai_family": {
+    "hermes": {
+      "name": "헤르메스 (총사령관)",
+      "role": "명령 수신, 지휘, 메모리/스킬/크론 통합관리",
+      "platform": "CLI + Telegram",
+      "status": "active"
+    },
+    "joseph_claude": {
+      "name": "요셉클로드",
+      "role": "코드 설계, DB 구조, 시스템 아키텍처",
+      "platform": "Claude API / 대시보드",
+      "status": "active"
+    },
+    "sisyphus": {
+      "name": "시시포스",
+      "role": "반복 실행, 자동 배포, 스케줄 작업",
+      "platform": "Hermes Cron",
+      "status": "active"
+    },
+    "joseph_clu": {
+      "name": "요셉클루",
+      "role": "모니터링, 상태 감시, 알림",
+      "platform": "Watchdog + Telegram",
+      "status": "active"
+    },
+    "joseph_gemini": {
+      "name": "요셉제미",
+      "role": "영상 분석, 이미지 처리, 멀티모달",
+      "platform": "Gemini API",
+      "status": "standby"
+    },
+    "joseph_grok": {
+      "name": "요셉그록",
+      "role": "실시간 정보, 웹 검색, 뉴스",
+      "platform": "Grok API",
+      "status": "standby"
+    }
+  },
+
+  "infrastructure": {
+    "nas_ip": "192.168.1.2",
+    "dashboard_port": 5500,
+    "proxy_port": 5501,
+    "local_port": 7777,
+    "supabase_project": "edqrkqfgdcompphqizvz",
+    "supabase_url": "https://edqrkqfgdcompphqizvz.supabase.co",
+    "github": "https://github.com/Gsccom/claude-hq",
+    "domain": "dashboard.yeshuaworld.org"
+  },
+
+  "memory_files": {
+    "macbook": "/Users/junpark/ai-family/memory/COMMAND_SYSTEM.json",
+    "context": "/Users/junpark/junpark/files_찬양사령부/CLAUDE_CONTEXT.json",
+    "nas": "/volume1/YeshuaWorld/claude/memory/CLAUDE_CONTEXT.json",
+    "github_raw": "https://raw.githubusercontent.com/Gsccom/claude-hq/main/memory/CLAUDE_CONTEXT.json"
+  },
+
+  "ministry_domains": {
+    "praise": {
+      "name": "찬양사령부",
+      "db": "~/찬양사령부/08_웹사이트/data/songs_db.json",
+      "html": "/volume1/docker/hermes-dashboard/html/praise.html",
+      "songs_count": 62,
+      "target": 100
+    },
+    "sermon": {
+      "name": "설교사령부",
+      "html": "/volume1/YeshuaWorld/sermons/html/index.html",
+      "md_count": 91,
+      "supabase_table": "sermon_assets"
+    },
+    "worship_orchestra": {
+      "name": "YWO (Yeshua Worship Orchestra)",
+      "github": "https://github.com/Gsccom?tab=repositories",
+      "repos": ["ywo-conductor", "ywo-orchestra", "ywo-stage", "ywo-canvas", "ywo-altar"],
+      "conductor_port": 8765
+    }
+  },
+
+  "command_chain": "아버지 명령 → 헤르메스 지휘 → Claude 실행",
+  "mission": "물 흐르듯 사역이 이루어질 수 있게",
+  "scripture": "Deuteronomy 6:5 KJV — And thou shalt love the LORD thy God with all thine heart, and with all thy soul, and with all thy might."
+}
